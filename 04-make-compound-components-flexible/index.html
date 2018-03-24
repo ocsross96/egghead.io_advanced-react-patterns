@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Antic+Slab" rel="stylesheet">
+  <link href="./style.css" rel="stylesheet">
+
+  <script src="https://unpkg.com/react@16.0.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const TOGGLE_CONTEXT = '__TOGGLE__';
+
+  function ToggleOn({children}, context) {
+    const {on} = context[TOGGLE_CONTEXT];
+    return on ? children : null;
+  }
+
+  ToggleOn.contextTypes = {
+    [TOGGLE_CONTEXT]: PropTypes.object.isRequired
+  }
+
+  function ToggleOff({children}, context) {
+    const {on} = context[TOGGLE_CONTEXT];
+    return on ? null: children;
+  }
+
+  ToggleOff.contextTypes = {
+    [TOGGLE_CONTEXT]: PropTypes.object.isRequired
+  }
+
+  function ToggleButton(props, context) {
+    const {on, toggle} = context[TOGGLE_CONTEXT];
+    return <Switch on={on} onClick={toggle} {...props} />
+  }
+
+  ToggleButton.contextTypes = {
+    [TOGGLE_CONTEXT]: PropTypes.object.isRequired
+  }
+
+  class Toggle extends React.Component {
+    static On = ToggleOn;
+    static Off = ToggleOff;
+    static Button = ToggleButton;
+    static defaultProps = {onToggle: () => {}};
+    static childContextTypes = {
+      [TOGGLE_CONTEXT]: PropTypes.object.isRequired
+    }
+
+    constructor (props) {
+      super(props);
+
+      this.state = { on: false };
+    }
+
+    toggle = () => {
+      this.setState(
+        ({ on }) => ({on: !on}), 
+        () => this.props.onToggle(this.state.on)
+      )
+    }
+
+    getChildContext() {
+      return {
+        [TOGGLE_CONTEXT]: {
+          on: this.state.on,
+          toggle: this.toggle
+        }
+      }
+    }
+
+    render() {
+      return <div>{this.props.children}</div>;
+    }
+  }
+
+  function App() {
+    return (
+      <Toggle onToggle={on => console.log('toggle', on)}>
+        <Toggle.On>The toggle is on</Toggle.On>
+        <Toggle.Off>The toggle is off</Toggle.Off>
+        <div>
+          <Toggle.Button />
+        </div>
+      </Toggle>
+    );
+  }
+
+  /*
+  *
+  *
+  * Below here are irrelevant
+  * implementation details...
+  *
+  *
+  */
+
+  function Switch({on, className = '', ...props}) {
+    return (
+      <div className="toggle">
+        <input
+          className="toggle-input"
+          type="checkbox"
+        />
+        <button
+          className={`${className} toggle-btn ${on
+            ? 'toggle-btn-on'
+            : 'toggle-btn-off'}`}
+          aria-expanded={on}
+          {...props}
+        />
+      </div>
+    )
+  }
+
+  ReactDOM.render(
+    <div
+      style={{
+        marginTop: 40,
+        display: 'flex',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        textAlign: 'center',
+      }}
+    >
+      <App />
+    </div>,
+    document.getElementById('root'),
+  )
+</script>
+</body>
+</html>

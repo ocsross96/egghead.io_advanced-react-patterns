@@ -1,0 +1,167 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Antic+Slab" rel="stylesheet">
+  <link href="./style.css" rel="stylesheet">
+
+  <script src="https://unpkg.com/react@16.0.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+  <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const compose = (...fns) => (...args) => fns.forEach(fn => fn && fn(...args));
+
+  class Toggle extends React.Component {
+    static defaultProps = {
+      defaultOn: false,
+      onToggle: () => {},
+      onReset: () => {}
+    };
+
+    initialState = {on: this.props.defaultOn};
+    state = this.initialState;
+
+    reset = () => {
+      if (this.isOnControlled()) {
+        this.props.onReset(!this.props.on);
+      } else {
+        this.setState(
+          this.initialState,
+          () => {
+            this.props.onReset(this.state.on);
+          }
+        )
+      }
+    }
+
+    toggle = () => {
+      if (this.isOnControlled()) {
+        this.props.onToggle(!this.props.on);
+      } else {
+        this.setState(
+          ({on}) => ({on: !on}),
+          () => {
+            this.props.onToggle(this.state.on);
+          }
+        );
+      }
+    }
+
+    getTogglerProps = ({onClick, ...props} = {}) => {
+      return {
+        'aria-expanded': this.state.on,
+        onClick: compose(onClick, this.toggle),
+        ...props
+      }
+    }
+
+    isOnControlled() {
+      return this.props.on !== undefined;
+    }
+
+    render() {
+      return this.props.render({
+        on: this.props.on !== undefined ? this.props.on : this.state.on,
+        toggle: this.toggle,
+        reset: this.reset,
+        getTogglerProps: this.getTogglerProps
+      });
+    }
+  }
+
+  class App extends React.Component {
+    initialState = {
+      timesClicked: 0,
+      on: false
+    };
+
+    state = this.initialState;
+
+    handleToggle = () => {
+      this.setState(({timesClicked, on}) => ({
+        timesClicked: timesClicked + 1,
+        on: timesClicked >= 4 ? false : !on
+      }));
+    }
+
+    handleReset = () => {
+      this.setState(this.initialState);
+    }
+
+    render() {
+      const { timesClicked, on } = this.state;
+
+      return (
+        <Toggle
+          onToggle={this.handleToggle}
+          onReset={this.handleReset}
+          render={toggle => (
+            <div>
+              <Switch
+                {...toggle.getTogglerProps({
+                  on: toggle.on,
+                })}
+              />
+              {
+                timesClicked > 4 ? (
+                  <p>Whoa, you've clicked too much!</p>
+                ) : null
+              }
+              <button onClick={() => toggle.reset()}>Reset</button>
+            </div>
+
+          )}
+        />
+      )
+    }
+  }
+
+  /*
+  *
+  *
+  * Below here are irrelevant
+  * implementation details...
+  *
+  *
+  */
+
+  function Switch({on, className = '', ...props}) {
+    return (
+      <div className="toggle">
+        <input
+          className="toggle-input"
+          type="checkbox"
+        />
+        <button
+          className={`${className} toggle-btn ${on
+            ? 'toggle-btn-on'
+            : 'toggle-btn-off'}`}
+          {...props}
+        />
+      </div>
+    )
+  }
+
+  ReactDOM.render(
+    <div
+      style={{
+        marginTop: 40,
+        display: 'flex',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        textAlign: 'center',
+      }}
+    >
+      <App />
+    </div>,
+    document.getElementById('root'),
+  )
+</script>
+</body>
+</html>

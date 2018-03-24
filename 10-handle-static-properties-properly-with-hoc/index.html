@@ -1,0 +1,171 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Antic+Slab" rel="stylesheet">
+  <link href="./style.css" rel="stylesheet">
+
+  <script src="https://unpkg.com/react@16.0.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+  <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const TOGGLE_CONTEXT = '__TOGGLE__';
+
+  const ToggleOn = ({children, toggle: {on}}) => {
+    return on ? children : null;
+  }
+
+  const ToggleOff = ({children, toggle: {on}}) => {
+    return on ? null: children;
+  }
+
+  const ToggleButton = ({toggle: { on, toggle }, ...props}) => {
+    return (
+      <Switch
+        on={on}
+        onClick={toggle}
+        {...props}
+      />
+    );
+  }
+
+  class Toggle extends React.Component {
+    static On = withToggle(ToggleOn);
+    static Off = withToggle(ToggleOff);
+    static Button = withToggle(ToggleButton);
+    static defaultProps = {onToggle: () => {}};
+    static childContextTypes = {
+      [TOGGLE_CONTEXT]: PropTypes.object.isRequired
+    }
+
+    constructor (props) {
+      super(props);
+
+      this.state = { on: false };
+    }
+
+    toggle = () => {
+      this.setState(
+        ({ on }) => ({on: !on}), 
+        () => this.props.onToggle(this.state.on)
+      )
+    }
+
+    getChildContext() {
+      return {
+        [TOGGLE_CONTEXT]: {
+          on: this.state.on,
+          toggle: this.toggle
+        }
+      }
+    }
+
+    render() {
+      return <div>{this.props.children}</div>;
+    }
+  }
+
+  function withToggle(Component) {
+
+    function Wrapper({ innerRef, ...props}, context) {
+      const toggleContext = context[TOGGLE_CONTEXT];
+      return (
+        <Component
+          {...props}
+          ref={innerRef}
+          toggle={toggleContext}
+        />
+      );
+    }
+
+    Wrapper.contextTypes = {
+      [TOGGLE_CONTEXT]: PropTypes.object.isRequired
+    }
+
+    Wrapper.displayName = `withToggle(${Component.displayName || Component.name})`;
+    Wrapper.WrappedComponent = Component;
+    return hoistNonReactStatics(Wrapper, Component);
+  }
+
+  class MyToggle extends React.Component {
+    static ToggleMessage = withToggle(
+      ({toggle: {on}}) => (
+        on ? 'Warning: The button is toggled on' : null
+      )
+    )
+    render() {
+      const { toggle: {on, toggle}} = this.props;
+      return (
+        <button onClick={toggle}>
+          { on ? 'on' : 'off' }
+        </button>
+      );
+    }
+  }
+
+  const MyToggleWrapper = withToggle(MyToggle);
+
+  function App () {
+    return (
+      <Toggle onToggle={(on) => console.log('toggle', on)}>
+        <Toggle.On>The button is on</Toggle.On>
+        <Toggle.Off>The button is off</Toggle.Off>
+        <Toggle.Button />
+        <hr />
+        <MyToggleWrapper />
+        <hr />
+        <MyToggleWrapper.ToggleMessage />
+      </Toggle>
+    );
+  }
+
+  /*
+  *
+  *
+  * Below here are irrelevant
+  * implementation details...
+  *
+  *
+  */
+
+  function Switch({on, className = '', ...props}) {
+    return (
+      <div className="toggle">
+        <input
+          className="toggle-input"
+          type="checkbox"
+        />
+        <button
+          className={`${className} toggle-btn ${on
+            ? 'toggle-btn-on'
+            : 'toggle-btn-off'}`}
+          aria-expanded={on}
+          {...props}
+        />
+      </div>
+    )
+  }
+
+  ReactDOM.render(
+    <div
+      style={{
+        marginTop: 40,
+        display: 'flex',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        textAlign: 'center',
+      }}
+    >
+      <App />
+    </div>,
+    document.getElementById('root'),
+  )
+</script>
+</body>
+</html>

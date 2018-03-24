@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Antic+Slab" rel="stylesheet">
+  <link href="./style.css" rel="stylesheet">
+
+  <script src="https://unpkg.com/react@16.0.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16.0.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/prop-types@15.6.0/prop-types.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+  <script src="https://cdn.rawgit.com/kentcdodds/ea2fdfc82f79228a6be641c78dc0e1b9/raw/0f792eb8dfb3bf993bdf50c9656f12090ed344e6/hoist-non-react-statics.umd.js"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  class Toggle extends React.Component {
+    static defaultProps = {onToggle: () => {}}
+
+    state = {on: false}
+
+    toggle = () => {
+      this.setState(
+        ({on}) => ({on: !on}),
+        () => this.props.onToggle(this.state.on)
+      );
+    }
+
+    render() {
+      return this.props.render({
+        on: this.state.on,
+        toggle: this.toggle
+      });
+    }
+  }
+
+  function App () {
+    return (
+      <Toggle
+        onToggle={(on) => console.log('toggle', on)}
+        render={({on, toggle}) => (
+          <div>
+            <Switch on={on} onClick={toggle} />
+            <div>{on ? 'on' : 'off'}</div>
+          </div>
+        )}
+      />
+    );
+  }
+
+  /*
+  *
+  *
+  * Below here are irrelevant
+  * implementation details...
+  *
+  *
+  */
+
+  function Switch({on, className = '', ...props}) {
+    return (
+      <div className="toggle">
+        <input
+          className="toggle-input"
+          type="checkbox"
+        />
+        <button
+          className={`${className} toggle-btn ${on
+            ? 'toggle-btn-on'
+            : 'toggle-btn-off'}`}
+          aria-expanded={on}
+          {...props}
+        />
+      </div>
+    )
+  }
+
+  ReactDOM.render(
+    <div
+      style={{
+        marginTop: 40,
+        display: 'flex',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        textAlign: 'center',
+      }}
+    >
+      <App />
+    </div>,
+    document.getElementById('root'),
+  )
+</script>
+</body>
+</html>
